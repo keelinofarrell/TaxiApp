@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="com.ticketmaster.api:discovery-java:0.1.6@jar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.ticketmaster.api/discovery-java/0.1.6/fae649469117fb936a9db0cf45d2845d2094d5a5/discovery-java-0.1.6.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.ticketmaster.api/discovery-java/0.1.6/659855638a7853911ff484b2ea01a8c7d58a269e/discovery-java-0.1.6-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
