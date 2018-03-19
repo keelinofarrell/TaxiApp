@@ -106,8 +106,9 @@ public class HistorySingleActivity extends AppCompatActivity implements OnMapRea
                             date.setText(getDate(Long.valueOf(child.getValue().toString())));
                         }
                         if(child.getKey().equals("destination")){
-                           location.setText(getDate(Long.valueOf(child.getValue().toString())));
+                            location.setText(child.getValue().toString());
                         }
+
                         if(child.getKey().equals("location")){
                             pickupLatLng = new LatLng(Double.valueOf(child.child("from").child("lat").getValue().toString()) , (Double.valueOf(child.child("from").child("lng").getValue().toString())));
                             destinationLatLng = new LatLng(Double.valueOf(child.child("to").child("lat").getValue().toString()) , (Double.valueOf(child.child("to").child("lng").getValue().toString())));

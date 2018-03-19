@@ -153,6 +153,7 @@
     <orderEntry type="library" name="com.github.jd-alexander:library-1.1.0" level="project" />
     <orderEntry type="library" name="com.google.firebase:firebase-auth-11.8.0" level="project" />
     <orderEntry type="library" name="com.google.android.gms:play-services-base-11.8.0" level="project" />
+    <orderEntry type="library" name="com.firebase:geofire-android-2.1.1" level="project" />
     <orderEntry type="library" name="com.fasterxml.jackson.datatype:jackson-datatype-joda:2.7.0@jar" level="project" />
     <orderEntry type="library" name="com.google.firebase:firebase-analytics-impl-11.8.0" level="project" />
     <orderEntry type="library" name="com.ticketmaster.api:discovery-model-java:0.1.6@jar" level="project" />
@@ -188,7 +189,6 @@
     <orderEntry type="library" name="com.android.support:animated-vector-drawable-26.1.0" level="project" />
     <orderEntry type="library" name="com.google.firebase:firebase-database-11.8.0" level="project" />
     <orderEntry type="library" name="com.fasterxml.jackson.core:jackson-core:2.7.0@jar" level="project" />
-    <orderEntry type="library" name="com.firebase:geofire-android-2.2.0" level="project" />
     <orderEntry type="library" name="com.google.firebase:firebase-analytics-license-11.8.0" level="project" />
     <orderEntry type="library" name="com.google.firebase:firebase-analytics-impl-license-11.8.0" level="project" />
     <orderEntry type="library" name="com.google.android.gms:play-services-tasks-license-11.8.0" level="project" />
