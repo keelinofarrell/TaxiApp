@@ -19,6 +19,12 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.bumptech.glide.Glide;
 import com.directions.route.AbstractRouting;
 import com.directions.route.Route;
@@ -56,6 +62,10 @@ import com.ticketmaster.discovery.model.Event;
 import com.ticketmaster.discovery.model.Events;
 
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -70,6 +80,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     LocationRequest mLocationRequest;
     SupportMapFragment mapFragment;
     private Button mLogout, mSettings, mDriveStatus, mHistory;
+    RequestQueue queue;
     private String customerId = "";
     private String destination;
     private boolean isLoggingOut = false;
@@ -83,11 +94,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     private LatLng pickupLatLng;
     public String apikey = "mzOuM4tYy3IrWOM3sOHsGaABAsHWNCo3";
     public DiscoveryApi api = new DiscoveryApi(apikey);
-    List<Event> events;
-    public String countryCode = "IE";
-    Marker eventMarker;
-    Event event;
-    Event e;
+    ArrayList<Marker> markers;
 
 
     @Override
@@ -119,7 +126,6 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
 
         pickupLatLng = new LatLng(0.0,0.0);
 
-        event = new Event();
 
         mDriveStatus.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -179,42 +185,71 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
         });
 
 
-        plotEvents();
+
         getTheCustomer();
-
-
-    }
-
-    private void plotEvents(){
-        try {
-
-            LatLng myLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-            events = api.searchEvents(new SearchEventsOperation()).getContent().getEvents();
-        }catch(IOException e){
-            e.printStackTrace();
-        }
+        getTheEvents();
 
     }
 
-    /*
-    private void plotEvents() {
+    private void getTheEvents() {
+        queue = Volley.newRequestQueue(getApplicationContext());
+        markers = new ArrayList<>();
+        String url = "https://app.ticketmaster.com/discovery/v2/events.json?countryCode=IE&size=133&startDateTime=2018-03-19T17:52:00Z&endDateTime=2018-03-26T17:53:00Z&apikey=mzOuM4tYy3IrWOM3sOHsGaABAsHWNCo3";
+        JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET, url, (JSONObject) null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                /// Parse JSON
+                try {
+                    JSONObject embedded = response.getJSONObject("_embedded");
+                    JSONArray eventsRequested = embedded.getJSONArray("events");
+                    int length = eventsRequested.length();
+                    for (int index = 0; index < length; index++) {
+                        JSONObject Tevent = eventsRequested.getJSONObject(index);
+                        String eventName = Tevent.getString("name");
+                        System.out.println("eventName:" + eventName);
+                        JSONObject dates = Tevent.getJSONObject("dates");
+                        JSONObject start = dates.getJSONObject("start");
+                        String startDateTime = start.getString("dateTime");
+                        JSONObject venueEvent = Tevent.getJSONObject("_embedded");
+                        JSONArray venues = venueEvent.getJSONArray("venues");
 
-        try {
-            events = api.searchEvents(new SearchEventsOperation()).getContent().getEvents();
-            for(int i = 0; i < events.size();i++){
-                if(countryCode.equals("IE")){
-                    event = events.get(i);
-                    event.getVenues();
-                    eventMarker = mMap.addMarker(new MarkerOptions().position().icon(BitmapDescriptorFactory.fromResource(R.drawable.ticket));
+
+                        int venuesLength = venues.length();
+                        for (int venuesIndex = 0; venuesIndex < venuesLength; venuesIndex++) {
+
+                            if (venues.getJSONObject(venuesIndex).has("location")) {
+                                JSONObject venue = venues.getJSONObject(venuesIndex);
+                                JSONObject venueLocation = venue.getJSONObject("location");
+                                double venueLng = Double.parseDouble(venueLocation.get("longitude").toString());
+                                double venueLat = Double.parseDouble(venueLocation.get("latitude").toString());
+                                LatLng venueCoordinates = new LatLng(venueLat, venueLng);
+                                Marker marker = mMap.addMarker(new MarkerOptions().position(venueCoordinates).title(eventName).snippet(startDateTime).icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_map_pin_azure)));
+                                markers.add(marker);
+                                //mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(venueCoordinates, 10));
+                                //list.add(eventName + " (start at " + startDateTime + ")");
+                            } else {
+                                System.out.println("no location");
+                            }
+                        }
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
             }
-        }catch (IOException e){
-            e.printStackTrace();
-        }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
 
-
+            }
+        });
+        queue.add(jsObjRequest);
     }
-    */
+
+
+
+
+
+
 
 
     private void getTheCustomer(){

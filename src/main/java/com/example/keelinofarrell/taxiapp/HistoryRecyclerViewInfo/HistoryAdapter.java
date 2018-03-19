@@ -29,7 +29,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryViewHolders> {
 
     @Override
     public HistoryViewHolders onCreateViewHolder(ViewGroup parent, int viewType) {
-        View layoutView = LayoutInflater.from(parent.getContext()).inflate(itemhistory, null);
+        View layoutView = LayoutInflater.from(parent.getContext()).inflate(itemhistory, null, false);
         RecyclerView.LayoutParams lp = new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         layoutView.setLayoutParams(lp);
         HistoryViewHolders hvh = new HistoryViewHolders(layoutView);
@@ -37,7 +37,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryViewHolders> {
     }
 
     @Override
-    public void onBindViewHolder(HistoryViewHolders holder, int position) {
+    public void onBindViewHolder(HistoryViewHolders holder, final int position) {
         holder.driveId.setText(itemList.get(position).getDriveId());
         if(itemList.get(position).getTime()!=null){
             holder.time.setText(itemList.get(position).getTime());
@@ -47,6 +47,6 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryViewHolders> {
 
     @Override
     public int getItemCount() {
-        return 0;
+       return this.itemList.size();
     }
 }
