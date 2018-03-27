@@ -263,7 +263,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
                                 double venueLng = Double.parseDouble(venueLocation.get("longitude").toString());
                                 double venueLat = Double.parseDouble(venueLocation.get("latitude").toString());
                                 LatLng venueCoordinates = new LatLng(venueLat, venueLng);
-                                Marker marker = mMap.addMarker(new MarkerOptions().position(venueCoordinates).title(eventName).snippet(startDateTime).icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_map_pin_azure)));
+                                Marker marker = mMap.addMarker(new MarkerOptions().position(venueCoordinates).title(eventName).snippet(startDateTime).icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_map)));
                                 markers.add(marker);
                                 //mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(venueCoordinates, 10));
                                 //list.add(eventName + " (start at " + startDateTime + ")");
