@@ -50,6 +50,7 @@ public class HistorySingleActivity extends AppCompatActivity implements OnMapRea
     private LatLng destinationLatLng, pickupLatLng;
     private List<Polyline> polylines;
     private static final int[] COLOURS = new int[]{R.color.primary_dark_material_light};
+    private String username1;
 
 
 
@@ -135,10 +136,12 @@ public class HistorySingleActivity extends AppCompatActivity implements OnMapRea
                 if(dataSnapshot.exists()){
                     Map<String, Object> map = (Map<String, Object>) dataSnapshot.getValue();
                     if(map.get("name") != null ){
-                        username.setText(map.get("name").toString());
+                        username1 = map.get("name").toString();
+                        username.setText(username1);
+
                     }
-                    if(map.get("phone") != null ){
-                        phone.setText(map.get("phone").toString());
+                    if(map.get("number") != null ){
+                        phone.setText(map.get("number").toString());
                     }
                     if(map.get("profileImageUrl") != null ){
                         Glide.with(getApplication()).load(map.get("profileImageUrl").toString()).into(imageUser);
@@ -208,8 +211,8 @@ public class HistorySingleActivity extends AppCompatActivity implements OnMapRea
 
         mMap.animateCamera(cameraUpdate);
 
-        mMap.addMarker(new MarkerOptions().position(pickupLatLng).title("Pickup").icon(BitmapDescriptorFactory.fromResource(R.drawable.pickup)));
-        mMap.addMarker(new MarkerOptions().position(destinationLatLng).title("Destintion"));
+        mMap.addMarker(new MarkerOptions().position(pickupLatLng).title("Pickup").icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_action_name)));
+        mMap.addMarker(new MarkerOptions().position(destinationLatLng).title("Destintion").icon(BitmapDescriptorFactory.fromResource(R.mipmap.destination)));
 
 
         if(polylines.size()>0) {
