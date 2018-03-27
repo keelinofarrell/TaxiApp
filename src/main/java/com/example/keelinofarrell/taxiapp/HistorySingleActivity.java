@@ -211,8 +211,8 @@ public class HistorySingleActivity extends AppCompatActivity implements OnMapRea
 
         mMap.animateCamera(cameraUpdate);
 
-        mMap.addMarker(new MarkerOptions().position(pickupLatLng).title("Pickup").icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_action_name)));
-        mMap.addMarker(new MarkerOptions().position(destinationLatLng).title("Destintion").icon(BitmapDescriptorFactory.fromResource(R.mipmap.destination)));
+        mMap.addMarker(new MarkerOptions().position(pickupLatLng).title("Pickup").icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_pin_pickup)));
+        mMap.addMarker(new MarkerOptions().position(destinationLatLng).title("Destintion").icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_pin_destination)));
 
 
         if(polylines.size()>0) {
