@@ -1,10 +1,13 @@
 package com.example.keelinofarrell.taxiapp;
 
+import android.annotation.SuppressLint;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.format.DateFormat;
+import android.view.View;
+import android.widget.TextView;
 
 import com.example.keelinofarrell.taxiapp.HistoryRecyclerViewInfo.HistoryAdapter;
 import com.example.keelinofarrell.taxiapp.HistoryRecyclerViewInfo.HistoryObject;
@@ -26,6 +29,8 @@ public class History extends AppCompatActivity {
     private RecyclerView.Adapter mHistoryAdapter;
     private RecyclerView.LayoutManager mHistoryLayoutManager;
     private String customersOrDriver, userId;
+    private TextView mBalance;
+    private double balance = 0.0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +52,12 @@ public class History extends AppCompatActivity {
 
         userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         getUserHistoryIds();
+
+        mBalance = (TextView)findViewById(R.id.balance);
+
+        if(customersOrDriver.equals("Drivers")){
+            mBalance.setVisibility(View.VISIBLE);
+        }
 
 
 
@@ -76,13 +87,27 @@ public class History extends AppCompatActivity {
     private void GetDriveInfo(String driveKey) {
         DatabaseReference historyDatabase = FirebaseDatabase.getInstance().getReference().child("history").child(driveKey);
         historyDatabase.addListenerForSingleValueEvent(new ValueEventListener() {
+            @SuppressLint("SetTextI18n")
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
                    String driveId = dataSnapshot.getKey();
                    Long timestamp = 0L;
+                   String mDistance = "";
+                   double journeyPrice = 0.0;
+
                     if(dataSnapshot.child("time").getValue() != null){
                         timestamp = Long.valueOf(dataSnapshot.child("time").getValue().toString());
+                    }
+
+                    if(dataSnapshot.child("CustomerPaid").getValue() != null && dataSnapshot.child("DriverPaid") == null){
+                        if(dataSnapshot.child("distance").getValue() !=null){
+                            mDistance = dataSnapshot.child("distance").getValue().toString();
+                            journeyPrice = (Double.valueOf(mDistance) * 0.4);
+                            balance += journeyPrice;
+                            mBalance.setText("Balance: €" + String.valueOf(balance));
+                        }
+
                     }
 
                    HistoryObject historyObject = new HistoryObject(driveId, getDate(timestamp));

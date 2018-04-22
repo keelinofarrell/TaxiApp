@@ -1,9 +1,14 @@
 package com.example.keelinofarrell.taxiapp;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.format.DateFormat;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,9 +35,18 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.paypal.android.sdk.payments.PayPalConfiguration;
+import com.paypal.android.sdk.payments.PayPalPayment;
+import com.paypal.android.sdk.payments.PayPalService;
+import com.paypal.android.sdk.payments.PaymentActivity;
+import com.paypal.android.sdk.payments.PaymentConfirmActivity;
+import com.paypal.android.sdk.payments.PaymentConfirmation;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.w3c.dom.Text;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -43,7 +57,7 @@ public class HistorySingleActivity extends AppCompatActivity implements OnMapRea
 
     private GoogleMap mMap;
     private SupportMapFragment mMapFrag;
-    private String driveId, currentUserId, customerId, driverId, userDriverOrCustomer;
+    private String driveId, currentUserId, customerId, driverId, userDriverOrCustomer, distance1;
     private TextView location, distance, date, username, phone;
     private ImageView imageUser;
     private DatabaseReference driveHistory;
@@ -51,6 +65,10 @@ public class HistorySingleActivity extends AppCompatActivity implements OnMapRea
     private List<Polyline> polylines;
     private static final int[] COLOURS = new int[]{R.color.primary_dark_material_light};
     private String username1;
+    private RatingBar ratingBar;
+    private double journeyPrice;
+    private Button mPayment;
+    private Boolean customerPaid = false;
 
 
 
@@ -58,6 +76,10 @@ public class HistorySingleActivity extends AppCompatActivity implements OnMapRea
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_history_single);
+
+        Intent intent = new Intent(this, PayPalService.class);
+        intent.putExtra(PayPalService.EXTRA_PAYPAL_CONFIGURATION, config);
+        startService(intent);
 
         polylines = new ArrayList<>();
 
@@ -74,6 +96,10 @@ public class HistorySingleActivity extends AppCompatActivity implements OnMapRea
         phone = (TextView)findViewById(R.id.userphone);
 
         imageUser = (ImageView)findViewById(R.id.userImage);
+
+        ratingBar = (RatingBar)findViewById(R.id.rating);
+
+        mPayment = (Button)findViewById(R.id.payment);
 
         currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
@@ -101,10 +127,23 @@ public class HistorySingleActivity extends AppCompatActivity implements OnMapRea
                             if(!driverId.equals(currentUserId)){
                                 userDriverOrCustomer = "Customers";
                                 getUserInfo("Drivers" ,driverId);
+                                getCustomerRelatedObjects();
                             }
                         }
                         if(child.getKey().equals("time")){
                             date.setText(getDate(Long.valueOf(child.getValue().toString())));
+                        }
+                        if(child.getKey().equals("rating")){
+                            ratingBar.setRating(Integer.valueOf(child.getValue().toString()));
+                        }
+                        if(child.getKey().equals("CustomerPaid")){
+                            customerPaid = true;
+                        }
+                        if(child.getKey().equals("distance")){
+                            distance1 = child.getValue().toString();
+                            distance.setText(distance1.substring(0, Math.min(distance1.length(), 5)) + " km");
+                            journeyPrice = Double.valueOf(distance1) * 0.5;
+
                         }
                         if(child.getKey().equals("destination")){
                             location.setText(child.getValue().toString());
@@ -128,24 +167,112 @@ public class HistorySingleActivity extends AppCompatActivity implements OnMapRea
         });
     }
 
+    private void getCustomerRelatedObjects() {
+        ratingBar.setVisibility(View.VISIBLE);
+        mPayment.setVisibility(View.VISIBLE);
+        mPayment.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                paypalPayment();
+            }
+        });
+
+        if(customerPaid){
+            mPayment.setEnabled(false);
+
+        }else{
+            mPayment.setEnabled(true);
+        }
+        ratingBar.setOnRatingBarChangeListener(new RatingBar.OnRatingBarChangeListener() {
+            @Override
+            public void onRatingChanged(RatingBar ratingBar, float v, boolean b) {
+                driveHistory.child("rating").setValue(v);
+                DatabaseReference mDriverDb = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driverId).child("rating");
+                mDriverDb.child(driveId).setValue(v);
+            }
+        });
+
+    }
+
+
+    private int PAYPAL_REQUEST_CODE = 1;
+    private static PayPalConfiguration config = new PayPalConfiguration()
+            .environment(PayPalConfiguration.ENVIRONMENT_SANDBOX)
+            .clientId(PaypalConfiguration.PAYPAL_CLIENT_ID);
+
+    private void paypalPayment() {
+
+        PayPalPayment payment = new PayPalPayment(new BigDecimal(journeyPrice), "USD", "ScoopYouUp Payment", PayPalPayment.PAYMENT_INTENT_SALE);
+        Intent intent = new Intent(this, PaymentActivity.class);
+        intent.putExtra(PayPalService.EXTRA_PAYPAL_CONFIGURATION, config);
+        intent.putExtra(PaymentActivity.EXTRA_PAYMENT, payment);
+
+        //recieve if the payment was successful
+        startActivityForResult(intent, PAYPAL_REQUEST_CODE);
+
+    }
+
+    //method for after we recieve if the payment was successful
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == PAYPAL_REQUEST_CODE){
+            if(resultCode == Activity.RESULT_OK){
+                PaymentConfirmation confirm = data.getParcelableExtra(PaymentActivity.EXTRA_RESULT_CONFIRMATION);
+                if(confirm != null){
+                    try{
+                        //GET DATA THAT IS RETURNED
+                        JSONObject jsonObject = new JSONObject(confirm.toJSONObject().toString());
+
+                        String paymentResponse = jsonObject.getJSONObject("response").getString("state");
+                        if(paymentResponse.equals("approved")){
+                            Toast.makeText(getApplicationContext(), "Payment Successful", Toast.LENGTH_LONG).show();
+                            driveHistory.child("CustomerPaid").setValue(true);
+                            mPayment.setEnabled(false);
+                        }
+                    }catch (JSONException e){
+                        e.printStackTrace();
+                    }
+                }
+            }else{
+                Toast.makeText(getApplicationContext(), "Payment Unsuccessful", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+
+        stopService(new Intent(this, PayPalService.class));
+        super.onDestroy();
+    }
+
     private void getUserInfo(String otherDriverOrUser, String otherUserId) {
         DatabaseReference otherUser = FirebaseDatabase.getInstance().getReference().child("Users").child(otherDriverOrUser).child(otherUserId);
         otherUser.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
+                if(dataSnapshot.exists()) {
                     Map<String, Object> map = (Map<String, Object>) dataSnapshot.getValue();
-                    if(map.get("name") != null ){
+                    if (map.get("name") != null) {
                         username1 = map.get("name").toString();
                         username.setText(username1);
+                        System.out.println("username = " + username);
 
                     }
-                    if(map.get("number") != null ){
+                    if (map.get("number") != null) {
                         phone.setText(map.get("number").toString());
                     }
-                    if(map.get("profileImageUrl") != null ){
+                    else
+                    {
+                        System.out.println("Number cannot be found");
+                    }
+                    if (map.get("profileImageUrl") != null) {
                         Glide.with(getApplication()).load(map.get("profileImageUrl").toString()).into(imageUser);
                     }
+                }
+                else{
+                    System.out.println("does not exist in this map");
                 }
             }
 

@@ -29,7 +29,7 @@ public class HistoryViewHolders extends RecyclerView.ViewHolder implements View.
     public void onClick(View view) {
         Intent intent = new Intent(view.getContext(), HistorySingleActivity.class);
         Bundle bundle = new Bundle();
-        bundle.putString("driveId", driveId.getText().toString());
+        bundle.putString("driveId", ((TextView)view.findViewById(R.id.driveId)).getText().toString());
         intent.putExtras(bundle);
         view.getContext().startActivity(intent);
     }

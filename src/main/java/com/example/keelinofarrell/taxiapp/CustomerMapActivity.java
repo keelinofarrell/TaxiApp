@@ -19,6 +19,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -48,6 +49,7 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -69,12 +71,13 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
     private LatLng pickupLocation;
     private boolean request = false;
     private Marker pickupMarker;
-    private String destination;
+    private String destination, userId1;
     private FusedLocationProviderClient mFusedLocationClient;
     private LinearLayout mDriverInfo;
     private ImageView mDriverProfileImage;
     private TextView mDriverName, mDriverNumber, mDriverCar;
     private LatLng destinationLatLng;
+    private RatingBar mRatingBar;
 
 
     @Override
@@ -99,7 +102,7 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
         mDriverCar = (TextView) findViewById(R.id.driverCar);
         mSettings = (Button) findViewById(R.id.settings);
         mHistory = (Button) findViewById(R.id.history);
-
+        mRatingBar = (RatingBar)findViewById(R.id.rating);
 
         destinationLatLng = new LatLng(0.0, 0.0);
 
@@ -125,10 +128,10 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
                     endDrive();
                 } else {
                     request = true;
-                    String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                    userId1 = FirebaseAuth.getInstance().getCurrentUser().getUid();
                     DatabaseReference ref = FirebaseDatabase.getInstance().getReference("customerRequest");
                     GeoFire geoFire = new GeoFire(ref);
-                    geoFire.setLocation(userId, new GeoLocation(mLastLocation.getLatitude(), mLastLocation.getLongitude()));
+                    geoFire.setLocation(userId1, new GeoLocation(mLastLocation.getLatitude(), mLastLocation.getLongitude()));
                     pickupLocation = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
                     pickupMarker = mMap.addMarker(new MarkerOptions().position(pickupLocation).title("Im Here!").icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_user)));
                     mRequest.setText("Getting your driver...");
@@ -262,9 +265,23 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
                         mDriverCar.setText(dataSnapshot.child("car").getValue().toString());
                     }
 
+
                     //use Glide to set the image
                     if (dataSnapshot.child("profileImageUrl") != null) {
                         Glide.with(getApplication()).load(dataSnapshot.child("profileImageUrl").getValue().toString()).into(mDriverProfileImage);
+                    }
+
+                    //get average rating for the driver
+                    int ratingSum = 0;
+                    float ratingTotal = 0;
+                    float ratingAverage = 0;
+                    for(DataSnapshot child : dataSnapshot.child("rating").getChildren()){
+                        ratingSum = ratingSum + Integer.valueOf(child.getValue().toString());
+                        ratingTotal ++;
+                    }
+                    if(ratingTotal != 0){
+                        ratingAverage = ratingSum/ratingTotal;
+                        mRatingBar.setRating(ratingAverage);
                     }
                 }
             }
@@ -413,8 +430,15 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
             } else {
                 checkPermission();
             }
+        }else
+            {
+                mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+                mMap.setMyLocationEnabled(true);
+            }
+
+
         }
-    }
+
 
     LocationCallback mLocationCallback = new LocationCallback() {
         @Override
@@ -422,6 +446,7 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
             for (Location location : locationResult.getLocations()) {
                 if (getApplicationContext() != null) {
                     mLastLocation = location;
+                    System.out.println("Last location =" + location);
                     LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
                     mMap.moveCamera(CameraUpdateFactory.newLatLng(latlng));
                     mMap.animateCamera(CameraUpdateFactory.zoomTo(13));

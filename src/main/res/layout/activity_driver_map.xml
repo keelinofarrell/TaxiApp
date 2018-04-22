@@ -5,10 +5,6 @@
     android:layout_height="match_parent"
     tools:context="com.example.keelinofarrell.taxiapp.DriverMapActivity">
 
-
-
-
-
     <fragment
 
         android:id="@+id/map"
@@ -16,6 +12,12 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
          />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -43,6 +45,15 @@
             android:layout_gravity="end"
             android:id="@+id/settings"
             android:text="Settings"/>
+    </LinearLayout>
+
+
+        <Switch
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Working"
+            android:layout_margin="10sp"
+            android:id="@+id/Wswitch"/>
     </LinearLayout>
 
 

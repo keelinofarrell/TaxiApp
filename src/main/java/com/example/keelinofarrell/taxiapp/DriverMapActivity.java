@@ -7,8 +7,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Build;
 import android.os.Looper;
 import android.os.TestLooperManager;
@@ -20,8 +22,10 @@ import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -51,6 +55,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -84,9 +89,8 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     Location mLastLocation, location;
     LocationRequest mLocationRequest;
     SupportMapFragment mapFragment;
-    private FusedLocationProviderClient mFusedLocationClient;
+    FusedLocationProviderClient mFusedLocationClient;
     private Button mLogout, mSettings, mDriveStatus, mHistory;
-    boolean mLocationPermissionGranted;
     RequestQueue queue;
     private String customerId = "";
     private String destination;
@@ -103,6 +107,11 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     public DiscoveryApi api = new DiscoveryApi(apikey);
     ArrayList<Marker> markers;
     Marker userMarker;
+    private Switch mswitch;
+    private float drivedistance;
+    private String distance;
+    private double journeyPrice;
+    boolean mswitch1 = false;
 
 
     @Override
@@ -114,6 +123,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
 
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+
         mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
@@ -129,6 +139,18 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
         mSettings = (Button) findViewById(R.id.settings);
         mDriveStatus = (Button) findViewById(R.id.status);
         mHistory = (Button) findViewById(R.id.history);
+        mswitch = (Switch) findViewById(R.id.Wswitch);
+        mswitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if (b) {
+                    connectDriver();
+                    mswitch1 = true;
+                } else {
+                    disconnectDriver();
+                }
+            }
+        });
 
         pickupLatLng = new LatLng(0.0, 0.0);
 
@@ -197,23 +219,23 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     }
 
     private void showAllCustomers() {
-        DatabaseReference ref= FirebaseDatabase.getInstance().getReference().child("CustomerAvailable");
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("CustomerAvailable");
         ref.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists() && dataSnapshot.getChildrenCount() > 0) {
 
                     Map<String, Object> mcustomers = (Map<String, Object>) dataSnapshot.getValue();  // i think it´s necessary to use array
-                    for(int i = 0; i < mcustomers.size(); i++){
-                            double locationLat = 0;
-                            double locationLng = 0;
-                            if (mcustomers.get(0) != null) {
-                                locationLat = Double.parseDouble(mcustomers.get(0).toString());
+                    for (int i = 0; i < mcustomers.size(); i++) {
+                        double locationLat = 0;
+                        double locationLng = 0;
+                        if (mcustomers.get(0) != null) {
+                            locationLat = Double.parseDouble(mcustomers.get(0).toString());
 
-                            }
-                            if (mcustomers.get(1) != null) {
-                                locationLng = Double.parseDouble(mcustomers.get(1).toString());
-                            }
+                        }
+                        if (mcustomers.get(1) != null) {
+                            locationLng = Double.parseDouble(mcustomers.get(1).toString());
+                        }
 
                         userLatLng = new LatLng(locationLat, locationLng);
                         userMarker = mMap.addMarker(new MarkerOptions().position(userLatLng).title("User").icon(BitmapDescriptorFactory.fromResource(R.mipmap.usermarker)));
@@ -234,7 +256,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     private void getTheEvents() {
         queue = Volley.newRequestQueue(getApplicationContext());
         markers = new ArrayList<>();
-        String url = "https://app.ticketmaster.com/discovery/v2/events.json?countryCode=IE&size=133&startDateTime=2018-03-19T17:52:00Z&endDateTime=2018-03-26T17:53:00Z&apikey=mzOuM4tYy3IrWOM3sOHsGaABAsHWNCo3";
+        String url = "https://app.ticketmaster.com/discovery/v2/events.json?countryCode=IE&size=133&startDateTime=2018-04-17T17:52:00Z&endDateTime=2018-04-24T17:53:00Z&apikey=mzOuM4tYy3IrWOM3sOHsGaABAsHWNCo3";
         JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET, url, (JSONObject) null, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
@@ -265,6 +287,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
                                 LatLng venueCoordinates = new LatLng(venueLat, venueLng);
                                 Marker marker = mMap.addMarker(new MarkerOptions().position(venueCoordinates).title(eventName).snippet(startDateTime).icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_map)));
                                 markers.add(marker);
+
                                 //mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(venueCoordinates, 10));
                                 //list.add(eventName + " (start at " + startDateTime + ")");
                             } else {
@@ -294,8 +317,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
                     status = 1;
-                    customerId = dataSnapshot.getValue().toString(
-                    );
+                    customerId = dataSnapshot.getValue().toString();
                     getTheCustomerPickupLocation();
                     getTheCustomerDestination();
                     getTheCustomerInfo();
@@ -395,6 +417,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
         GeoFire geoFire = new GeoFire(ref);
         geoFire.removeLocation(customerId);
         customerId = "";
+        drivedistance = 0;
 
         //remove drivers marker
         if (pickupMarker != null) {
@@ -438,6 +461,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
         historyMap.put("location/from/lng", pickupLatLng.longitude);
         historyMap.put("location/to/lat", destinationLatLng.latitude);
         historyMap.put("location/to/lng", destinationLatLng.longitude);
+        historyMap.put("distance", drivedistance);
         historyRef.child(requestId).updateChildren(historyMap);
 
     }
@@ -499,43 +523,6 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
         }
     }
 
-    LocationCallback mLocationCallback = new LocationCallback() {
-        @Override
-        public void onLocationResult(LocationResult locationResult) {
-            for (Location location : locationResult.getLocations()) {
-
-                if (getApplicationContext() != null) {
-                    mLastLocation = location;
-                    LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                    mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-                    mMap.animateCamera(CameraUpdateFactory.zoomTo(13));
-                    mMap.setBuildingsEnabled(false);
-                    String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                    DatabaseReference refAvailable = FirebaseDatabase.getInstance().getReference("DriverAvailable");
-                    DatabaseReference refWorking = FirebaseDatabase.getInstance().getReference("DriverWorking");
-                    GeoFire geoFireAvailable = new GeoFire(refAvailable);
-                    GeoFire geoFireWorking = new GeoFire(refWorking);
-
-
-                    switch (customerId) {
-                        case "":
-                            geoFireWorking.removeLocation(userId);
-                            geoFireAvailable.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
-                            break;
-                        default:
-                            geoFireAvailable.removeLocation(userId);
-                            geoFireWorking.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
-
-                            break;
-                    }
-
-
-                }
-
-
-            }
-        }
-    };
 
 
 
@@ -544,7 +531,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
         mMap = googleMap;
 
 
-        LocationRequest mLocationRequest = LocationRequest.create();
+        mLocationRequest = LocationRequest.create();
         //update every 1000 milliseconds
         mLocationRequest.setInterval(1000);
         mLocationRequest.setFastestInterval(1000);
@@ -552,14 +539,11 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
-            if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
-                mLocationPermissionGranted = true;
-                mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
-                mMap.setMyLocationEnabled(true);
-            }else{
+            } else {
                 checkLocationPermission();
             }
         }
@@ -568,16 +552,90 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
 
 
 
-    final int LOCATION_REQUEST_CODE = 1;
-    //@Override
-    public void onRequestPermissionResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+
+
+
+    LocationCallback mLocationCallback = new LocationCallback() {
+        @Override
+        public void onLocationResult(LocationResult locationResult) {
+            super.onLocationResult(locationResult);
+            for (Location location : locationResult.getLocations()) {
+
+                if (!customerId.equals("") && mLastLocation != null && location != null) {
+                    drivedistance += mLastLocation.distanceTo(location) / 1000;
+                }
+
+
+                mLastLocation = location;
+
+                //LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                //mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+
+                CameraPosition cameraPosition = new CameraPosition.Builder()
+                        .target(new LatLng(location.getLatitude(), location.getLongitude()))      // Sets the center of the map to location user
+                        .zoom(13)                   // Sets the zoom
+                        .bearing(90)                // Sets the orientation of the camera to east
+                        .tilt(40)// Sets the tilt of the camera to 30 degrees
+                        .build();                   // Creates a CameraPosition from the builder
+                mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+                mMap.getUiSettings().setAllGesturesEnabled(true);
+                mMap.getUiSettings().setZoomGesturesEnabled(true);
+
+
+                String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                DatabaseReference refAvailable = FirebaseDatabase.getInstance().getReference("DriverAvailable");
+                DatabaseReference refWorking = FirebaseDatabase.getInstance().getReference("DriverWorking");
+                GeoFire geoFireAvailable = new GeoFire(refAvailable);
+                GeoFire geoFireWorking = new GeoFire(refWorking);
+
+
+                switch (customerId) {
+                    case "":
+                        geoFireWorking.removeLocation(userId);
+                        geoFireAvailable.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
+                        break;
+                    default:
+                        geoFireAvailable.removeLocation(userId);
+                        geoFireWorking.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
+
+                        break;
+
+                }
+            }
+
+        }
+
+
+    };
+
+
+    private void checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+                new AlertDialog.Builder(this)
+                        .setTitle("Must give permissions")
+                        .setMessage("Must give permission")
+                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                ActivityCompat.requestPermissions(DriverMapActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+                            }
+                        })
+                        .create().show();
+            } else {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
-            case LOCATION_REQUEST_CODE: {
+            case 1: {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                    if(ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
-                        mLocationPermissionGranted = true;
+                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                         mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
                         mMap.setMyLocationEnabled(true);
 
@@ -590,30 +648,12 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
         }
     }
 
-    private void checkLocationPermission() {
-        if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-            if(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)){
-                new AlertDialog.Builder(this)
-                        .setTitle("Must give permissions")
-                        .setMessage("Must give permission")
-                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                ActivityCompat.requestPermissions(DriverMapActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-                            }
-                        })
-                     .create().show();
-            }
-            else{
-                ActivityCompat.requestPermissions(DriverMapActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-            }
-        }
-    }
 
     private void connectDriver(){
         checkLocationPermission();
         mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
         mMap.setMyLocationEnabled(true);
+
     }
 
 
@@ -621,6 +661,14 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
         if(mFusedLocationClient != null){
             mFusedLocationClient.removeLocationUpdates(mLocationCallback);
         }
+        mLastLocation = location;
+        CameraPosition cameraPosition = new CameraPosition.Builder()
+                .target(new LatLng(location.getLatitude(), location.getLongitude()))      // Sets the center of the map to location user
+                .zoom(7)                   // Sets the zoom
+                .bearing(90)                // Sets the orientation of the camera to east
+                .tilt(40)                   // Sets the tilt of the camera to 30 degrees
+                .build();                   // Creates a CameraPosition from the builder
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         DatabaseReference ref = FirebaseDatabase.getInstance().getReference("DriverAvailable");
 
@@ -628,14 +676,6 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
         geoFire.removeLocation(userId);
     }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-        if(!isLoggingOut){
-            disconnectDriver();
-        }
-
-    }
 
     @Override
     public void onRoutingFailure(RouteException e) {

@@ -18,6 +18,8 @@ public class MainActivity extends AppCompatActivity {
         mDriver = (Button)findViewById(R.id.driver);
         mCustomer = (Button)findViewById(R.id.customer);
 
+
+        startService(new Intent(MainActivity.this, ClosedMap.class));
         mDriver.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
