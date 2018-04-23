@@ -44,8 +44,14 @@
             android:layout_height="wrap_content"
             android:layout_gravity="end"
             android:id="@+id/settings"
-            android:text="Settings"/>
+            android:text="Settings" />
     </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="10sp">
 
 
         <Switch
@@ -54,6 +60,15 @@
             android:text="Working"
             android:layout_margin="10sp"
             android:id="@+id/Wswitch"/>
+
+        <Switch
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Todays Events"
+            android:layout_margin="10sp"
+            android:id="@+id/events" />
+
+        </LinearLayout>
     </LinearLayout>
 
 

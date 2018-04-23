@@ -107,7 +107,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     public DiscoveryApi api = new DiscoveryApi(apikey);
     ArrayList<Marker> markers;
     Marker userMarker;
-    private Switch mswitch;
+    private Switch mswitch , mEvents;
     private float drivedistance;
     private String distance;
     private double journeyPrice;
@@ -140,6 +140,20 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
         mDriveStatus = (Button) findViewById(R.id.status);
         mHistory = (Button) findViewById(R.id.history);
         mswitch = (Switch) findViewById(R.id.Wswitch);
+        mEvents = (Switch)findViewById(R.id.events);
+        mEvents.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked){
+                    removeMarkers();
+                    getDailyEvents();
+                }else{
+                    getTheEvents();
+                }
+            }
+        });
+
+
         mswitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
@@ -218,6 +232,73 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
 
     }
 
+    private void removeMarkers() {
+        for(Marker marker : markers){
+            marker.remove();
+        }
+        markers.clear();
+
+    }
+
+    private void getDailyEvents() {
+
+        queue = Volley.newRequestQueue(getApplicationContext());
+        markers = new ArrayList<>();
+        String url = "https://app.ticketmaster.com/discovery/v2/events.json?countryCode=IE&size=133&startDateTime=2018-04-23T17:52:00Z&endDateTime=2018-04-24T17:53:00Z&apikey=mzOuM4tYy3IrWOM3sOHsGaABAsHWNCo3";
+        JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET, url, (JSONObject) null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                /// Parse JSON
+                try {
+                    JSONObject embedded = response.getJSONObject("_embedded");
+                    JSONArray eventsRequested = embedded.getJSONArray("events");
+                    int length = eventsRequested.length();
+                    for (int index = 0; index < length; index++) {
+                        JSONObject Tevent = eventsRequested.getJSONObject(index);
+                        String eventName = Tevent.getString("name");
+                        System.out.println("eventName:" + eventName);
+                        JSONObject dates = Tevent.getJSONObject("dates");
+                        JSONObject start = dates.getJSONObject("start");
+                        String startDateTime = start.getString("dateTime");
+                        JSONObject venueEvent = Tevent.getJSONObject("_embedded");
+                        JSONArray venues = venueEvent.getJSONArray("venues");
+
+
+                        int venuesLength = venues.length();
+                        for (int venuesIndex = 0; venuesIndex < venuesLength; venuesIndex++) {
+
+                            if (venues.getJSONObject(venuesIndex).has("location")) {
+                                JSONObject venue = venues.getJSONObject(venuesIndex);
+                                JSONObject venueLocation = venue.getJSONObject("location");
+                                double venueLng = Double.parseDouble(venueLocation.get("longitude").toString());
+                                double venueLat = Double.parseDouble(venueLocation.get("latitude").toString());
+                                LatLng venueCoordinates = new LatLng(venueLat, venueLng);
+                                Marker marker = mMap.addMarker(new MarkerOptions().position(venueCoordinates).title(eventName).snippet(startDateTime).icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_map)));
+                                markers.add(marker);
+
+                                //mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(venueCoordinates, 10));
+                                //list.add(eventName + " (start at " + startDateTime + ")");
+                            } else {
+                                System.out.println("no location");
+                            }
+                        }
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+            }
+        });
+        queue.add(jsObjRequest);
+
+
+
+    }
+
     private void showAllCustomers() {
         DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("CustomerAvailable");
         ref.addValueEventListener(new ValueEventListener() {
@@ -256,7 +337,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     private void getTheEvents() {
         queue = Volley.newRequestQueue(getApplicationContext());
         markers = new ArrayList<>();
-        String url = "https://app.ticketmaster.com/discovery/v2/events.json?countryCode=IE&size=133&startDateTime=2018-04-17T17:52:00Z&endDateTime=2018-04-24T17:53:00Z&apikey=mzOuM4tYy3IrWOM3sOHsGaABAsHWNCo3";
+        String url = "https://app.ticketmaster.com/discovery/v2/events.json?countryCode=IE&size=133&startDateTime=2018-04-23T17:52:00Z&endDateTime=2018-04-30T17:53:00Z&apikey=mzOuM4tYy3IrWOM3sOHsGaABAsHWNCo3";
         JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET, url, (JSONObject) null, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
