@@ -6,7 +6,8 @@
     android:layout_height="match_parent"
     tools:context="com.example.keelinofarrell.taxiapp.History"
     android:fitsSystemWindows="true"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:id="@+id/layout">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -17,10 +18,26 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Balance: €1000"
+            android:text="Balance: €0"
             android:id="@+id/balance"
             android:padding="15sp"
             android:visibility="gone"/>
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="PayPal Email"
+            android:id="@+id/payoutEmail"
+            android:visibility="gone"/>
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Payout"
+            android:id="@+id/payoutButton"
+            android:visibility="gone"/>
+
+
 
     </LinearLayout>
 
