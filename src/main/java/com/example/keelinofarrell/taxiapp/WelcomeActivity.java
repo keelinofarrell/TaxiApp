@@ -1,12 +1,14 @@
 package com.example.keelinofarrell.taxiapp;
 
 import android.content.Intent;
+import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -16,6 +18,7 @@ public class WelcomeActivity extends AppCompatActivity {
     TextView mName, mSlogan;
     Button mGo;
     Animation uptodown, downtoup;
+    ImageView taxi;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +31,7 @@ public class WelcomeActivity extends AppCompatActivity {
         l1 = (LinearLayout)findViewById(R.id.linear11);
         l2 = (LinearLayout)findViewById(R.id.linear12);
 
+        taxi = (ImageView)findViewById(R.id.taxi);
         uptodown = AnimationUtils.loadAnimation(this, R.anim.uptodown);
 
         l1.setAnimation(uptodown);

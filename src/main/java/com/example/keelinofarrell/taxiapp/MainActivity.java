@@ -4,11 +4,21 @@ import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
     private Button mDriver, mCustomer;
+    private TextView mPadding, mWhat;
+    private ImageView mTaxi;
+    LinearLayout mLayout;
+    Animation lefttoright;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -17,6 +27,14 @@ public class MainActivity extends AppCompatActivity {
 
         mDriver = (Button)findViewById(R.id.driver);
         mCustomer = (Button)findViewById(R.id.customer);
+        mPadding = (TextView)findViewById(R.id.padding);
+        mWhat = (TextView)findViewById(R.id.what);
+        mTaxi = (ImageView)findViewById(R.id.mytaxi);
+        mLayout = (LinearLayout)findViewById(R.id.layoutslide);
+
+        lefttoright = AnimationUtils.loadAnimation(this, R.anim.lefttoright);
+
+        mLayout.setAnimation(lefttoright);
 
 
         startService(new Intent(MainActivity.this, ClosedMap.class));

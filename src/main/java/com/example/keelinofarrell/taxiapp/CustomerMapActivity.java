@@ -67,7 +67,7 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
     Location mLastLocation;
     LocationRequest mLocationRequest;
     SupportMapFragment mapFragment;
-    private Button mLogout, mRequest, mSettings, mHistory;
+    private Button mLogout, mRequest, mSettings, mHistory, mCancel;
     private LatLng pickupLocation;
     private boolean request = false;
     private Marker pickupMarker;
@@ -103,6 +103,7 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
         mSettings = (Button) findViewById(R.id.settings);
         mHistory = (Button) findViewById(R.id.history);
         mRatingBar = (RatingBar)findViewById(R.id.rating);
+        mCancel = (Button)findViewById(R.id.cancel);
 
         destinationLatLng = new LatLng(0.0, 0.0);
 
@@ -398,7 +399,14 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
                     if (distance < 100) {
                         mRequest.setText("Your Driver has Arrived");
                     } else {
-                        mRequest.setText("We Found you a Driver!" + String.valueOf(distance));
+                        mRequest.setText("We Found you a Driver! " + String.valueOf(distance) + "km away." );
+                        mCancel.setVisibility(View.VISIBLE);
+                        mCancel.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                endDrive();
+                            }
+                        });
                     }
                     mDriverMarker = mMap.addMarker(new MarkerOptions().position(driverLatLong).title("Your Driver").icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_taxi)));
                 }
@@ -450,6 +458,9 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
                     LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
                     mMap.moveCamera(CameraUpdateFactory.newLatLng(latlng));
                     mMap.animateCamera(CameraUpdateFactory.zoomTo(13));
+                    mMap.addMarker(new MarkerOptions()
+                            .position(latlng)
+                            .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_user)));
 
                     String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
                     DatabaseReference ref = FirebaseDatabase.getInstance().getReference("CustomerAvailable");

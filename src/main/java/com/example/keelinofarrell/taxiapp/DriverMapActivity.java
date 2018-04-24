@@ -86,7 +86,7 @@ import java.util.Map;
 public class DriverMapActivity extends FragmentActivity implements OnMapReadyCallback, RoutingListener {
 
     private GoogleMap mMap;
-    Location mLastLocation, location;
+    Location mLastLocation;
     LocationRequest mLocationRequest;
     SupportMapFragment mapFragment;
     FusedLocationProviderClient mFusedLocationClient;
@@ -402,6 +402,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
                     getTheCustomerPickupLocation();
                     getTheCustomerDestination();
                     getTheCustomerInfo();
+
                 } else//called every time customer is removed(cancels)
                 {
                     endDrive();
@@ -418,6 +419,8 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     }
 
     private void getTheCustomerDestination() {
+        checkLocationPermission();
+        mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
         String driverId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         final DatabaseReference assignedCustomerRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driverId).child("customerRequest");
         assignedCustomerRef.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -611,7 +614,6 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-
         mLocationRequest = LocationRequest.create();
         //update every 1000 milliseconds
         mLocationRequest.setInterval(1000);
@@ -659,6 +661,8 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
                         .tilt(40)// Sets the tilt of the camera to 30 degrees
                         .build();                   // Creates a CameraPosition from the builder
                 mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+
+
                 mMap.getUiSettings().setAllGesturesEnabled(true);
                 mMap.getUiSettings().setZoomGesturesEnabled(true);
 
@@ -668,6 +672,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
                 DatabaseReference refWorking = FirebaseDatabase.getInstance().getReference("DriverWorking");
                 GeoFire geoFireAvailable = new GeoFire(refAvailable);
                 GeoFire geoFireWorking = new GeoFire(refWorking);
+
 
 
                 switch (customerId) {
@@ -688,6 +693,10 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
 
 
     };
+
+
+
+
 
 
     private void checkLocationPermission() {
@@ -732,8 +741,49 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
 
     private void connectDriver(){
         checkLocationPermission();
-        mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+        //mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+
+
+
+        LocationManager lm = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+        Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        double longitude = location.getLongitude();
+        double latitude = location.getLatitude();
+
+        LatLng newLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+
         mMap.setMyLocationEnabled(true);
+        mMap.addMarker(new MarkerOptions()
+                .position(newLatLng)
+        .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_taxi)));
+
+        CameraPosition cameraPosition = new CameraPosition.Builder()
+                .target(new LatLng(location.getLatitude(), location.getLongitude()))      // Sets the center of the map to location user
+                .zoom(13)                   // Sets the zoom
+                .bearing(0)                // Sets the orientation of the camera to east
+                .tilt(40)// Sets the tilt of the camera to 30 degrees
+                .build();                   // Creates a CameraPosition from the builder
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference refAvailable = FirebaseDatabase.getInstance().getReference("DriverAvailable");
+        DatabaseReference refWorking = FirebaseDatabase.getInstance().getReference("DriverWorking");
+        GeoFire geoFireAvailable = new GeoFire(refAvailable);
+        GeoFire geoFireWorking = new GeoFire(refWorking);
+
+        switch (customerId) {
+            case "":
+                geoFireWorking.removeLocation(userId);
+                geoFireAvailable.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
+                break;
+            default:
+                geoFireAvailable.removeLocation(userId);
+                geoFireWorking.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
+
+                break;
+
+        }
+
 
     }
 
