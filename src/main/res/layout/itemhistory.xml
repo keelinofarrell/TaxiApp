@@ -15,6 +15,7 @@
         android:layout_height="wrap_content"
         android:id="@+id/driveId"
         android:textSize="12dp"
-        android:text="Drive Id"/>
+        android:text="Drive Id"
+        android:visibility="gone"/>
 
 </LinearLayout>

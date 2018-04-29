@@ -2,7 +2,11 @@ package com.example.keelinofarrell.taxiapp;
 
 import android.*;
 import android.Manifest;
+import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Application;
+import android.app.Dialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -57,6 +61,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,6 +83,7 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
     private TextView mDriverName, mDriverNumber, mDriverCar;
     private LatLng destinationLatLng;
     private RatingBar mRatingBar;
+    Context context;
 
 
     @Override
@@ -93,6 +99,8 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
 
 
         mapFragment.getMapAsync(this);
+
+
 
 
         mDriverInfo = (LinearLayout) findViewById(R.id.driverInfo);
@@ -181,6 +189,66 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
 
     }
 
+    //get all available drivers
+    boolean getAvailableDriversStarted = false;
+    List<Marker>markers = new ArrayList<Marker>();
+    private void getAvailableDrivers(){
+        getAvailableDriversStarted = true;
+        DatabaseReference drivers = FirebaseDatabase.getInstance().getReference().child("DriverAvailable");
+        GeoFire geoFire = new GeoFire(drivers);
+        GeoQuery geoQuery = geoFire.queryAtLocation(new GeoLocation(mLastLocation.getLatitude(), mLastLocation.getLongitude()), 10000);
+
+        geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
+            @Override
+            public void onKeyEntered(String key, GeoLocation location) {
+                for(Marker markeriteration : markers){
+                    if(markeriteration.getTag().equals(key)){
+                        return;
+                    }
+
+                    LatLng driverLoc = new LatLng(location.latitude, location.longitude);
+                    Marker mdriver = mMap.addMarker(new MarkerOptions().position(driverLoc).icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_taxi)));
+                    mdriver.setTag(key);
+                    markers.add(mdriver);
+                }
+            }
+
+            @Override
+            public void onKeyExited(String key) {
+                for(Marker markeriteration : markers){
+                    if(markeriteration.getTag().equals(key)){
+                        markeriteration.remove();
+                        markers.remove(markeriteration);
+                        return;
+                    }
+                }
+            }
+
+            @Override
+            public void onKeyMoved(String key, GeoLocation location) {
+                for(Marker markeriteration : markers) {
+                    if (markeriteration.getTag().equals(key)) {
+                        markeriteration.setPosition(new LatLng(location.latitude, location.longitude));
+                    }
+                }
+            }
+
+            @Override
+            public void onGeoQueryReady() {
+
+            }
+
+            @Override
+            public void onGeoQueryError(DatabaseError error) {
+
+            }
+        });
+    }
+
+
+
+
+
     private int radius = 1;
     private boolean driverFound = false;
     private String driverFoundId;
@@ -214,7 +282,16 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
                     getDriverLocation();
                     getDriverInfo();
                     getDriveEnded();
-                    mRequest.setText("Looking for Driver Location");
+                    //mRequest.setText("Cancel request");
+
+                    mCancel.setVisibility(View.VISIBLE);
+                    mCancel.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            endDriveWithNoAlert();
+                        }
+                    });
+
                 }
 
 
@@ -319,6 +396,8 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
     }
 
     private void endDrive() {
+        showAlert();
+
         request = false;
         geoQuery.removeAllListeners();
         driverLocationRef.removeEventListener(driverLocationRefListener);
@@ -352,6 +431,36 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
         mDriverProfileImage.setImageResource(R.drawable.userdefault);
 
     }
+
+    private void showAlert() {
+        AlertDialog.Builder builder1 = new AlertDialog.Builder(CustomerMapActivity.this);
+        builder1.setMessage("Please Pay driver in the History tab.");
+        builder1.setCancelable(true);
+
+
+        builder1.setPositiveButton(
+                "Pay Now",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        Intent intent = new Intent(CustomerMapActivity.this, History.class);
+                        intent.putExtra("customersOrDriver", "Customers");
+                        startActivity(intent);
+                        return;
+                    }
+                });
+
+        builder1.setNegativeButton(
+                "Pay Later",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.cancel();
+                    }
+                });
+
+        AlertDialog alert11 = builder1.create();
+        alert11.show();
+    }
+
 
     private Marker mDriverMarker;
     private DatabaseReference driverLocationRef;
@@ -400,13 +509,7 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
                         mRequest.setText("Your Driver has Arrived");
                     } else {
                         mRequest.setText("We Found you a Driver! " + String.valueOf(distance) + "km away." );
-                        mCancel.setVisibility(View.VISIBLE);
-                        mCancel.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                endDrive();
-                            }
-                        });
+
                     }
                     mDriverMarker = mMap.addMarker(new MarkerOptions().position(driverLatLong).title("Your Driver").icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_taxi)));
                 }
@@ -417,6 +520,41 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
 
             }
         });
+    }
+
+    private void endDriveWithNoAlert() {
+
+        request = false;
+        geoQuery.removeAllListeners();
+        driverLocationRef.removeEventListener(driverLocationRefListener);
+        driveEndedRef.removeEventListener(driveEndedRefListener);
+
+        //remove the customer id inside driver id
+        if (driverFoundId != null) {
+            DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driverFoundId).child("customerRequest");
+            driverRef.removeValue();
+            driverFoundId = null;
+        }
+        //delete everything about the pickup
+        driverFound = false;
+        radius = 1;
+        //erase the location
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("customerRequest");
+        GeoFire geoFire = new GeoFire(ref);
+        geoFire.removeLocation(userId);
+
+        //remove drivers marker
+        if (pickupMarker != null) {
+            pickupMarker.remove();
+        }
+
+        mRequest.setText("Find A Driver");
+        mDriverInfo.setVisibility(View.GONE);
+        mDriverName.setText("");
+        mDriverNumber.setText("");
+        mDriverCar.setText("");
+        mDriverProfileImage.setImageResource(R.drawable.userdefault);
     }
 
 
@@ -433,16 +571,14 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             //check if permission has been granted
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
-                mMap.setMyLocationEnabled(true);
+
             } else {
                 checkPermission();
             }
-        }else
-            {
-                mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
-                mMap.setMyLocationEnabled(true);
-            }
+        }
+
+        mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+        mMap.setMyLocationEnabled(true);
 
 
         }
@@ -462,11 +598,15 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
                             .position(latlng)
                             .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_user)));
 
-                    String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+                    /*String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
                     DatabaseReference ref = FirebaseDatabase.getInstance().getReference("CustomerAvailable");
 
                     GeoFire geoFire = new GeoFire(ref);
-                    geoFire.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
+                    geoFire.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));*/
+                    if(!getAvailableDriversStarted) {
+                        getAvailableDrivers();
+                    }
                 }
             }
         }

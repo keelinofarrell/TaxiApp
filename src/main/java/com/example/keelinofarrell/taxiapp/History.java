@@ -26,6 +26,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Locale;
@@ -46,6 +47,7 @@ public class History extends AppCompatActivity {
     private RecyclerView.LayoutManager mHistoryLayoutManager;
     private String customersOrDriver, userId;
     private TextView mBalance;
+    double balance;
 
     private Button mPayout;
     private EditText mPayoutEt;
@@ -79,8 +81,7 @@ public class History extends AppCompatActivity {
 
         if(customersOrDriver.equals("Drivers")){
             mBalance.setVisibility(View.VISIBLE);
-            mPayout.setVisibility(View.VISIBLE);
-            mPayoutEt.setVisibility(View.VISIBLE);
+
         }
 
         mPayout.setOnClickListener(new View.OnClickListener() {
@@ -126,7 +127,7 @@ public class History extends AppCompatActivity {
                    String driveId = dataSnapshot.getKey();
                    Long timestamp = 0L;
                    String mDistance = "";
-                   double balance = 0.0;
+                   balance = 0.0;
                    double journeyPrice = 0.0;
                    String price1 = "";
 
@@ -139,7 +140,8 @@ public class History extends AppCompatActivity {
                             price1 = dataSnapshot.child("price").getValue().toString();
                             journeyPrice = Double.valueOf(price1);
                             balance += journeyPrice;
-                            mBalance.setText("Balance: €" + String.valueOf(balance));
+                            mBalance.setText("Total Earned: €" + new DecimalFormat("##.##").format(balance));
+
                         }
 
                     }

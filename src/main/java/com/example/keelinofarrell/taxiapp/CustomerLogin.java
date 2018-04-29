@@ -7,6 +7,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -20,6 +22,7 @@ import com.google.firebase.database.FirebaseDatabase;
 public class CustomerLogin extends AppCompatActivity {
     private EditText mEmail, mPassword;
     private Button mLogin, mRegistration;
+    private ImageView mLogo;
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener firebaseAuthListener;
 
@@ -31,6 +34,8 @@ public class CustomerLogin extends AppCompatActivity {
 
         //get current state of the login
         mAuth = FirebaseAuth.getInstance();
+
+        mLogo = (ImageView)findViewById(R.id.taxilogo);
 
         //get current state of User
         firebaseAuthListener = new FirebaseAuth.AuthStateListener() {

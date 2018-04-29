@@ -6,14 +6,16 @@
     android:layout_height="match_parent"
     tools:context="com.example.keelinofarrell.taxiapp.CustomerSettings"
     android:orientation="vertical"
-    android:padding= "20sp">
+    android:padding= "20sp"
+    android:background="@color/lightgrey">
 
     <ImageView
         android:layout_width="100sp"
         android:layout_height="100sp"
         android:id="@+id/profileImage"
         android:src="@drawable/userdefault"
-        android:layout_marginBottom="20sp"/>
+        android:layout_marginBottom="20sp"
+        android:background="@drawable/border"/>
 
     <EditText
         android:id="@+id/name"
@@ -41,15 +43,24 @@
         android:layout_marginBottom="20sp" />
 
     <Button
-        android:layout_width="match_parent"
+        android:layout_width="150dp"
         android:layout_height="wrap_content"
         android:id="@+id/confirm"
-        android:text="Confirm"/>
+        android:text="Confirm"
+        android:layout_gravity="center"
+        android:background="@drawable/buttonstyle"
+        android:backgroundTint="@color/yellow"/>
 
     <Button
-        android:layout_width="match_parent"
+        android:layout_width="150dp"
         android:layout_height="wrap_content"
         android:id="@+id/back"
-        android:text="Go Back"/>
+        android:text="Go Back"
+        android:layout_marginTop="20sp"
+        android:layout_gravity="center"
+        android:background="@drawable/buttonstyle"
+        android:backgroundTint="@color/yellow"/>
+
+
 
 </LinearLayout>
