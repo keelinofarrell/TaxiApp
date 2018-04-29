@@ -63,18 +63,23 @@ public class DriverLogin extends AppCompatActivity {
             public void onClick(View view) {
                 final String email = mEmail.getText().toString();
                 final String password = mPassword.getText().toString();
-                mAuth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(DriverLogin.this, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if(!task.isSuccessful()){
-                            Toast.makeText(DriverLogin.this, "Registration Failed", Toast.LENGTH_SHORT).show();
-                        }else{
-                            String user_id = mAuth.getCurrentUser().getUid();
-                            DatabaseReference current_user_db = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(user_id).child("name");
-                            current_user_db.setValue(email);
+                if(!email.equals("") && !password.equals("")) {
+                    mAuth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(DriverLogin.this, new OnCompleteListener<AuthResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<AuthResult> task) {
+                            if (!task.isSuccessful()) {
+                                Toast.makeText(DriverLogin.this, "Registration Failed", Toast.LENGTH_SHORT).show();
+                            } else {
+                                String user_id = mAuth.getCurrentUser().getUid();
+                                DatabaseReference current_user_db = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(user_id).child("name");
+                                current_user_db.setValue(email);
+                            }
                         }
-                    }
-                });
+                    });
+                }
+                else{
+                    Toast.makeText(DriverLogin.this, "Registration Failed", Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
