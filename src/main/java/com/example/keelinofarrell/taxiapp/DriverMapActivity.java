@@ -245,7 +245,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
 
         queue = Volley.newRequestQueue(getApplicationContext());
         markers = new ArrayList<>();
-        String url = "https://app.ticketmaster.com/discovery/v2/events.json?countryCode=IE&size=133&startDateTime=2018-04-25T00:00:00Z&endDateTime=2018-04-25T23:59:00Z&apikey=mzOuM4tYy3IrWOM3sOHsGaABAsHWNCo3";
+        String url = "https://app.ticketmaster.com/discovery/v2/events.json?countryCode=IE&size=133&startDateTime=2018-04-30T00:00:00Z&endDateTime=2018-04-30T23:59:00Z&apikey=mzOuM4tYy3IrWOM3sOHsGaABAsHWNCo3";
         JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET, url, (JSONObject) null, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
@@ -338,7 +338,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     private void getTheEvents() {
         queue = Volley.newRequestQueue(getApplicationContext());
         markers = new ArrayList<>();
-        String url = "https://app.ticketmaster.com/discovery/v2/events.json?countryCode=IE&size=133&startDateTime=2018-04-25T17:52:00Z&endDateTime=2018-05-02T17:53:00Z&apikey=mzOuM4tYy3IrWOM3sOHsGaABAsHWNCo3";
+        String url = "https://app.ticketmaster.com/discovery/v2/events.json?countryCode=IE&size=133&startDateTime=2018-04-30T17:52:00Z&endDateTime=2018-05-07T17:53:00Z&apikey=mzOuM4tYy3IrWOM3sOHsGaABAsHWNCo3";
         JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET, url, (JSONObject) null, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
@@ -861,7 +861,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
             Polyline polyline = mMap.addPolyline(polyOptions);
             polylines.add(polyline);
 
-            Toast.makeText(getApplicationContext(),"Route "+ (i+1) +": distance - "+ route.get(i).getDistanceValue()+": duration - "+ route.get(i).getDurationValue(),Toast.LENGTH_SHORT).show();
+            //Toast.makeText(getApplicationContext(),"Route "+ (i+1) +": distance - "+ route.get(i).getDistanceValue()+": duration - "+ route.get(i).getDurationValue(),Toast.LENGTH_SHORT).show();
         }
 
     }

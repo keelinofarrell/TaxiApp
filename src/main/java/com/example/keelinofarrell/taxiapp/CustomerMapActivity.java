@@ -11,6 +11,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.Build;
 import android.os.Looper;
 import android.support.annotation.NonNull;
@@ -571,6 +572,18 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             //check if permission has been granted
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                LocationManager lm = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+                Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                double longitude = location.getLongitude();
+                double latitude = location.getLatitude();
+
+                LatLng newLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+
+                mMap.setMyLocationEnabled(true);
+                mMap.addMarker(new MarkerOptions()
+                        .position(newLatLng)
+                        .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_user)));
+
 
             } else {
                 checkPermission();
@@ -594,9 +607,7 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
                     LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
                     mMap.moveCamera(CameraUpdateFactory.newLatLng(latlng));
                     mMap.animateCamera(CameraUpdateFactory.zoomTo(13));
-                    mMap.addMarker(new MarkerOptions()
-                            .position(latlng)
-                            .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_user)));
+
 
 
                     /*String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
